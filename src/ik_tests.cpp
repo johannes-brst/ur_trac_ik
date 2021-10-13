@@ -56,7 +56,7 @@ double _timeout;
 double timestamp = 0;
 bool CKDONE = false;
 std::mutex mtx;
-std::vector<double> eePos;
+std::vector<double> eePos  = {0,0,0,0,0,0,0,0,0,0,0,0};;
 bool modified = false;
 std::thread thr;
 
@@ -394,6 +394,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   start_time = boost::posix_time::microsec_clock::local_time();
   printf("DEBUG: chain number of segments: %u\n", chain.getNrOfSegments());
   rc = tracik_solver.CartToJnt(jnt, end_effector_pose, result);
+  printf("DEBUG: chain number of segments #2: %u\n", chain.getNrOfSegments());
 
   diff = boost::posix_time::microsec_clock::local_time() - start_time;
   elapsed = diff.total_nanoseconds() / 1e9;
@@ -550,8 +551,8 @@ int main(int argc, char **argv)
   // commandVector.push_back((char*)"-9");
   // commandVector.push_back((char*)"roslaunch");
   // commandVector.push_back(NULL);
-  std::vector<double> test_start = {2.67858,-1.49047,-1.38178,1.97177,-0.568994,0.680332};
-  rtde_control.moveJ(test_start);
+  //std::vector<double> test_start = {2.67858,-1.49047,-1.38178,1.97177,-0.568994,0.680332};
+  //rtde_control.moveJ(test_start);
   // char **command = &commandVector[0];
   // execvp(command[0],command);
   std::vector<double> ee_pose = {-0.99682635, -0.03650709,  0.07074217, -0.15015,
