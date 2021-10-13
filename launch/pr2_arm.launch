@@ -2,7 +2,7 @@
 <launch>
 
   <arg name="num_samples" default="100000" />
-  <arg name="chain_start" default="world" />
+  <arg name="chain_start" default="base_link" />
   <arg name="chain_end" default="ee_link" />
   <arg name="timeout" default="0.005" />
 

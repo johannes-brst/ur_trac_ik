@@ -77,7 +77,7 @@ static void loopCK()
   //std::vector<double> startPose = {-0.1, 0.4, 0.5, 4.356, -0.529, -0.587};
   //rtde_control.servoJ(rtde_control.getInverseKinematics(startPose), 1, 1, 0.1, 0.2, 300);
   printf("DEBUG:  loopCK\n");
-  printf("eePos.size(): %lu \n", eePos.size());
+  printf("DEBUG: eePos.size(): %lu \n", eePos.size());
   while (!CKDONE)
   {
     std::vector<double> pos;
@@ -455,7 +455,7 @@ void moveArm(std::vector<double> ee_pose, double num_samples, std::string chain_
 {
   printf("DEBUG: moveArm\n");
   std::vector<double> actual_q = rtde_receive.getActualQ();
-
+  printf("DEBUG: eePos.size(): %lu \n", eePos.size());
   KDL::JntArray result = calculateSolution(num_samples, actual_q, ee_pose, chain_start, chain_end, timeout, urdf_param);
   printf("\n");
 
