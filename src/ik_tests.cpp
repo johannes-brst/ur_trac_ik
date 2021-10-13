@@ -48,8 +48,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace ur_rtde;
 
-RTDEControlInterface rtde_control("127.0.0.1");
-RTDEReceiveInterface rtde_receive("127.0.0.1");
+RTDEControlInterface rtde_control("172.30.10.1");
+RTDEReceiveInterface rtde_receive("172.30.10.1");
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
 double _timeout;
@@ -60,7 +60,7 @@ std::vector<double> eePos;
 bool modified = false;
 std::thread thr;
 
-void moveArm(std::vector<double> ee_pose, double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param);
+void moveArm(double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param);
 
 void setEEPos(std::vector<double> &p, double ts = 0)
 {
@@ -101,7 +101,7 @@ static void loopCK()
     }
     printf("DEBUG: pre moveArm\n");
     printf("DEBUG: eePos.size(): %lu \n", eePos.size());
-    moveArm(eePos, _num_samples, _chain_start, _chain_end, _timeout, _urdf_param);
+    moveArm(_num_samples, _chain_start, _chain_end, _timeout, _urdf_param);
   }
 }
 
@@ -189,7 +189,7 @@ void testRandomSamples(double num_samples, std::string chain_start, std::string 
   // This constructor parses the URDF loaded in rosparm urdf_param into the
   // needed KDL structures.  We then pull these out to compare against the KDL
   // IK solver.
-  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps);
+  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps, TRAC_IK::Distance);
 
   KDL::Chain chain;
   KDL::JntArray ll, ul; //lower joint limits, upper joint limits
@@ -298,7 +298,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   // This constructor parses the URDF loaded in rosparm urdf_param into the
   // needed KDL structures.  We then pull these out to compare against the KDL
   // IK solver.
-  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps);
+  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps, TRAC_IK::Distance);
   printf("DEBUG: tracik_solver init done\n");
   KDL::Chain chain;
   KDL::JntArray ll, ul; //lower joint limits, upper joint limits
@@ -325,31 +325,10 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   printf("\nUsing %d joints\n", chain.getNrOfJoints());
 
   // Set up KDL IK
-  KDL::ChainFkSolverPos_recursive fk_solver(chain);                                     // Forward kin. solver
-  KDL::ChainIkSolverVel_pinv vik_solver(chain);                                         // PseudoInverse vel solver
-  KDL::ChainIkSolverPos_NR_JL kdl_solver(chain, ll, ul, fk_solver, vik_solver, 1, eps); // Joint Limit Solver
+  //KDL::ChainFkSolverPos_recursive fk_solver(chain);                                     // Forward kin. solver
+  //KDL::ChainIkSolverVel_pinv vik_solver(chain);                                         // PseudoInverse vel solver
+  //KDL::ChainIkSolverPos_NR_JL kdl_solver(chain, ll, ul, fk_solver, vik_solver, 1, eps); // Joint Limit Solver
   // 1 iteration per solve (will wrap in timed loop to compare with TRAC-IK)
-
-  // Create Nominal chain configuration midway between all joint limits
-  KDL::JntArray nominal(chain.getNrOfJoints());
-
-  for (uint j = 0; j < nominal.data.size(); j++)
-  {
-    nominal(j) = (ll(j) + ul(j)) / 2.0;
-  }
-
-  // Create desired number of valid, random joint configurations
-  std::vector<KDL::JntArray> JointList;
-  KDL::JntArray q(chain.getNrOfJoints());
-
-  for (uint i = 0; i < num_samples; i++)
-  {
-    for (uint j = 0; j < ll.data.size(); j++)
-    {
-      q(j) = fRand(ll(j), ul(j));
-    }
-    JointList.push_back(q);
-  }
 
   boost::posix_time::ptime start_time;
   boost::posix_time::time_duration diff;
@@ -401,13 +380,20 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   jnt_goal.resize(6);*/
 
   //fk_solver.JntToCart(jnt_goal, end_effector_pose);
+  printf("DEBUG: end_effector_pose\n");
   std::cout << end_effector_pose << std::endl;
   rc = 0;
 
+  printf("DEBUG: jnt\n");
+  for (unsigned int i = 0; i < chain.getNrOfJoints(); i++)
+    {
+      std::cout << jnt(i) << std::endl;
+    }
+
   double elapsed = 0;
   start_time = boost::posix_time::microsec_clock::local_time();
-
-  rc = tracik_solver.CartToJnt(nominal, end_effector_pose, result);
+  printf("DEBUG: chain number of segments: %u\n", chain.getNrOfSegments());
+  rc = tracik_solver.CartToJnt(jnt, end_effector_pose, result);
 
   diff = boost::posix_time::microsec_clock::local_time() - start_time;
   elapsed = diff.total_nanoseconds() / 1e9;
@@ -417,8 +403,9 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   {
     printf("rc\n");
     //std:cout << rc << std::endl;
-    printf("%i", rc);
-    printf("\n");
+    printf("%i\n", rc);
+    printf("Error: Killing Program!\n");
+    exit(-1);
   }
   else
   {
@@ -451,12 +438,12 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
 }
 
 /* move the arm with ur_rtde to the best found solution*/
-void moveArm(std::vector<double> ee_pose, double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param)
+void moveArm(double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param)
 {
   printf("DEBUG: moveArm\n");
   std::vector<double> actual_q = rtde_receive.getActualQ();
 
-  KDL::JntArray result = calculateSolution(num_samples, actual_q, ee_pose, chain_start, chain_end, timeout, urdf_param);
+  KDL::JntArray result = calculateSolution(num_samples, actual_q, eePos, chain_start, chain_end, timeout, urdf_param);
   printf("\n");
 
   double sT = 0.002; //sample Time
@@ -524,8 +511,6 @@ void moveArm(std::vector<double> ee_pose, double num_samples, std::string chain_
 
 
   rtde_control.speedStop();
-  rtde_control.stopScript();
-  rtde_receive.disconnect();
 
   printf("End Move Arm \n");
 }
@@ -548,7 +533,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  nh.param("timeout", _timeout, 0.005);
+  nh.param("timeout", _timeout, 0.05);
   nh.param("urdf_param", _urdf_param, std::string("/robot_description"));
 
   if (_num_samples < 1)
@@ -565,22 +550,32 @@ int main(int argc, char **argv)
   // commandVector.push_back((char*)"-9");
   // commandVector.push_back((char*)"roslaunch");
   // commandVector.push_back(NULL);
-
+  std::vector<double> test_start = {2.67858,-1.49047,-1.38178,1.97177,-0.568994,0.680332};
+  rtde_control.moveJ(test_start);
   // char **command = &commandVector[0];
   // execvp(command[0],command);
-  std::vector<double> ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
-                                -0.0157949, 0.1246475, 0.9920754, 0.4,
-                                0.0331173, 0.9917200, -0.1240756, 0.236058};
-  
-  eePos = ee_pose;
+  std::vector<double> ee_pose = {-0.99682635, -0.03650709,  0.07074217, -0.15015,
+                                - 0.05363443, 0.34868571,  0.93570381, 0.31120,
+                                -0.05882661,  0.93652843, -0.34562107, 0.39744};
+
   setEEPos(ee_pose);
   printf("DEBUG: main() #2\n");
 
   startCK();
   //moveArm(ee_pose, _num_samples, _chain_start, _chain_end, _timeout, _urdf_param);
+  double temp_z = 0.39744;
   while(true){
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    temp_z += 0.001;
+    std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, 0.15015,
+                                -0.0157949, 0.1246475, 0.9920754, 0.31120,
+                                0.0331173, 0.9917200, -0.1240756, temp_z};
+    //setEEPos(new_ee_pose);
+    if(temp_z > 1.0)
+      break;
   }
+  rtde_control.stopScript();
+  rtde_receive.disconnect();
 
   return 0;
 }
@@ -588,7 +583,7 @@ int main(int argc, char **argv)
 /*
 Error codes für rc (tracik_solver.CartToJnt):
 
--1 = E_DEGRADED 	
+1 = E_DEGRADED 	
 Converged but degraded solution (e.g. WDLS with psuedo-inverse singular)
 
 0 = E_NOERROR 	
