@@ -102,7 +102,6 @@ static void loopCK()
     printf("DEBUG: pre moveArm\n");
     printf("DEBUG: eePos.size(): %lu \n", eePos.size());
     moveArm(_num_samples, _chain_start, _chain_end, _timeout, _urdf_param);
-    std::cout.flush();
   }
 }
 
@@ -231,8 +230,8 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   double total_time = 0;
   uint success = 0;
 
-  std::cout << "*** TRAC-IK with: *** \n";
-  std::cout << "Start\n";
+  std::cout << "*** TRAC-IK with: *** \n" << std::endl;;
+  std::cout << "Start\n" << std::endl;;
   for (unsigned int i = 0; i < chain.getNrOfJoints(); i++)
   {
     std::cout << startpos[i] << std::endl;
@@ -356,7 +355,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   printf("current joint angles:\n");
   for (int i = 0; i <= actual_q.size() - 1; i++)
-    std::cout << actual_q[i] << " ";
+    std::cout << actual_q[i] << " " << std::endl;;
   printf("\n");
   joint_speed = newJointSpeed(goal, actual_q, joint_speed, max_vel);
 
@@ -403,7 +402,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   printf("reached joint angles:\n");
   for (int i = 0; i <= actual_q.size() - 1; i++)
-    std::cout << actual_q[i] << " ";
+    std::cout << actual_q[i] << " " << std::endl;;
   printf("\n");
 
 
