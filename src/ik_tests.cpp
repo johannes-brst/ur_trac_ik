@@ -48,15 +48,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using namespace ur_rtde;
 
-RTDEControlInterface rtde_control("127.0.0.1");
-RTDEReceiveInterface rtde_receive("127.0.0.1");
+RTDEControlInterface rtde_control("172.30.10.1");
+RTDEReceiveInterface rtde_receive("172.30.10.1");
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
 double _timeout;
 double timestamp = 0;
 bool CKDONE = false;
 std::mutex mtx;
-std::vector<double> eePos;
+std::vector<double> eePos = {0,0,0,0,0,0,0,0,0,0,0,0};
 bool modified = false;
 std::thread thr;
 
@@ -298,7 +298,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   // This constructor parses the URDF loaded in rosparm urdf_param into the
   // needed KDL structures.  We then pull these out to compare against the KDL
   // IK solver.
-  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps);
+  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps,TRAC_IK::Distance);
   printf("DEBUG: tracik_solver init done\n");
   KDL::Chain chain;
   KDL::JntArray ll, ul; //lower joint limits, upper joint limits
@@ -325,9 +325,9 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   printf("\nUsing %d joints\n", chain.getNrOfJoints());
 
   // Set up KDL IK
-  KDL::ChainFkSolverPos_recursive fk_solver(chain);                                     // Forward kin. solver
-  KDL::ChainIkSolverVel_pinv vik_solver(chain);                                         // PseudoInverse vel solver
-  KDL::ChainIkSolverPos_NR_JL kdl_solver(chain, ll, ul, fk_solver, vik_solver, 1, eps); // Joint Limit Solver
+  //KDL::ChainFkSolverPos_recursive fk_solver(chain);                                     // Forward kin. solver
+  //KDL::ChainIkSolverVel_pinv vik_solver(chain);                                         // PseudoInverse vel solver
+  //KDL::ChainIkSolverPos_NR_JL kdl_solver(chain, ll, ul, fk_solver, vik_solver, 1, eps); // Joint Limit Solver
   // 1 iteration per solve (will wrap in timed loop to compare with TRAC-IK)
 
   // Create Nominal chain configuration midway between all joint limits
@@ -406,9 +406,9 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
 
   double elapsed = 0;
   start_time = boost::posix_time::microsec_clock::local_time();
-
+  printf("DEBUG: chain number of segments: %u\n", chain.getNrOfSegments());
   rc = tracik_solver.CartToJnt(nominal, end_effector_pose, result);
-
+  printf("DEBUG: chain number of segments #2: %u\n", chain.getNrOfSegments());
   diff = boost::posix_time::microsec_clock::local_time() - start_time;
   elapsed = diff.total_nanoseconds() / 1e9;
   std::cout << "Time needed for calculation:" << elapsed << std::endl;
