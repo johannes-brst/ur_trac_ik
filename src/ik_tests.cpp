@@ -558,12 +558,12 @@ int main(int argc, char **argv)
   // char **command = &commandVector[0];
   // execvp(command[0],command);
 
-  //std::vector<double> test_start = {2.67858,-1.49047,-1.38178,1.97177,-0.568994,0.680332};
+  //std::vector<double> test_start = {1.67858,-1.49047,-1.38178,0.07177,-0.0568994,0.0680332};
   //rtde_control.moveJ(test_start);
 
-  std::vector<double> ee_pose = {-0.99682635, -0.03650709,  0.07074217, -0.15015,
-                                - 0.05363443, 0.34868571,  0.93570381, 0.31120,
-                                -0.05882661,  0.93652843, -0.34562107, 0.39744};
+  std::vector<double> ee_pose = {-0.9993266,  0.0308951, -0.0197921, -0.15177,
+        -0.0157949,  0.1246475,  0.9920754, 0.4,
+         0.0331173,  0.9917200, -0.1240756, 0.536058};
 
   setEEPos(ee_pose);
   printf("DEBUG: main() #2\n");
@@ -571,10 +571,15 @@ int main(int argc, char **argv)
   startCK();
   //moveArm(ee_pose, _num_samples, _chain_start, _chain_end, _timeout, _urdf_param);
   double temp_z = 0.39744;
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  ee_pose = {-0.9993266,  0.0308951, -0.0197921, -0.15177,
+        -0.0157949,  0.1246475,  0.9920754, 0.4,
+         0.0331173,  0.9917200, -0.1240756, 0.736058};
+  setEEPos(ee_pose);
   while(true){
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     temp_z += 0.001;
-    std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, 0.15015,
+    std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15015,
                                 -0.0157949, 0.1246475, 0.9920754, 0.31120,
                                 0.0331173, 0.9917200, -0.1240756, temp_z};
     //setEEPos(new_ee_pose);
