@@ -63,5 +63,6 @@
         "future": "cpp",
         "mutex": "cpp",
         "codecvt": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

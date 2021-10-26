@@ -110,7 +110,6 @@ static void loopCK()
 
 void startCK()
 {
-  std::cout.flush();
   thr = std::thread(loopCK);
 }
 
@@ -383,7 +382,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   jnt_goal.data = temp_goal;
   jnt_goal.resize(6);
 
-  fk_solver.JntToCart(jnt_goal, end_effector_pose);
+  //fk_solver.JntToCart(jnt_goal, end_effector_pose);
   printf("DEBUG: end_effector_pose\n");
   std::cout << end_effector_pose << std::endl;
   rc = 0;
@@ -455,7 +454,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
   KDL::JntArray result = calculateSolution(num_samples, actual_q, eePos, chain_start, chain_end, timeout, urdf_param);
   printf("\n");
 
-  bool postest = true;
+  bool postest = false; // used for testing and getting ee_pose from joint_pos
   if(postest){
     return;
   }
@@ -532,6 +531,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
 int main(int argc, char **argv)
 {
+  ROS_INFO("ROS_INFO"); //need to call ROS_INFO one time, so std::cout prints work
   std::cout.flush();
   printf("DEBUG: main() #1\n");
   srand(1);
@@ -576,10 +576,10 @@ int main(int argc, char **argv)
         0.33334069 , 0.93898887, -0.08475784, 0.4,
          -0.94258408 , 0.33386503, -0.0083306 , 0.206058};
 
-  setEEPos(ee_pose);
+  //setEEPos(ee_pose);
   printf("DEBUG: main() #2\n");
-  std::cout << "cout test" << std::endl;
-  //startCK();
+  
+  startCK();
   double temp_z = 0.39744;
 
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -587,6 +587,7 @@ int main(int argc, char **argv)
   std::vector<double> hin_ee_pose = {-0.9993266,  0.0308951, -0.0197921, -0.15177,
         -0.0157949,  0.1246475,  0.9920754, -0.4,
          0.0331173,  0.9917200, -0.1240756, 0.736058};
+  setEEPos(hin_ee_pose);
   std::vector<double> her_ee_pose = {-0.9993266,  0.0308951, -0.0197921, -0.141,
         -0.0157949,  0.1246475,  0.9920754, -0.746,
          0.0331173,  0.9917200, -0.1240756, 0.274};
