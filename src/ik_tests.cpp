@@ -43,6 +43,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <chrono>
 #include <Eigen/Dense>
 #include <mutex>
+#include <ncurses.h>
 
 #define CK
 
@@ -464,7 +465,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
 
-  double max_vel = 3.14;
+  double max_vel = 1.0; // max possible value is 3.14
   double acceleration = 40.0;
   double dt = 0.02;
   actual_q = rtde_receive.getActualQ();
@@ -572,9 +573,9 @@ int main(int argc, char **argv)
   //std::vector<double> test_start = {1.67858,-1.49047,-1.38178,0.07177,-0.0568994,0.0680332};
   //rtde_control.moveJ(test_start);
 
-  std::vector<double> ee_pose = {0.02047534,  0.08266832 , 0.99636675, 0.15177,
-        0.33334069 , 0.93898887, -0.08475784, 0.4,
-         -0.94258408 , 0.33386503, -0.0083306 , 0.206058};
+  std::vector<double> ee_pose = {0.02047534, 0.08266832,  0.99636675, 0.15177,
+                                 0.33334069, 0.93898887, -0.08475784, 0.4,
+                                -0.94258408, 0.33386503, -0.0083306 , 0.206058};
 
   //setEEPos(ee_pose);
   printf("DEBUG: main() #2\n");
@@ -585,28 +586,37 @@ int main(int argc, char **argv)
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   std::vector<double> hin_ee_pose = {-0.9993266,  0.0308951, -0.0197921, -0.15177,
-        -0.0157949,  0.1246475,  0.9920754, -0.4,
+        -0.0157949,  0.1246475,  0.9920754, 0.4,
          0.0331173,  0.9917200, -0.1240756, 0.736058};
   setEEPos(hin_ee_pose);
-  std::vector<double> her_ee_pose = {-0.9993266,  0.0308951, -0.0197921, -0.141,
-        -0.0157949,  0.1246475,  0.9920754, -0.746,
+  std::vector<double> her_ee_pose = {-0.9993266,  0.0308951, -0.0197921, -0.15177,
+        -0.0157949,  0.1246475,  0.9920754, 0.4,
          0.0331173,  0.9917200, -0.1240756, 0.274};
 
   
 
   while(true){
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    /*temp_z += 0.001;
-    std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15015,
-                                -0.0157949, 0.1246475, 0.9920754, -0.31120,
-                                0.0331173, 0.9917200, -0.1240756, temp_z};*/
-    //setEEPos(hin_ee_pose);
+    //temp_z += 0.001;
+    //std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15015,
+    //                            -0.0157949, 0.1246475, 0.9920754, -0.31120,
+    //                            0.0331173, 0.9917200, -0.1240756, temp_z};
+    setEEPos(hin_ee_pose);
+    if(std::abs(rtde_receive.getActualTCPPose().at(0) - hin_ee_pose.at(3)) < 0.01){
+      if(std::abs(rtde_receive.getActualTCPPose().at(1) - hin_ee_pose.at(7)) < 0.01){
+        if(std::abs(rtde_receive.getActualTCPPose().at(2) - hin_ee_pose.at(11)) < 0.01){
+        break;
+        }
+      }
+    }
+    
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    //setEEPos(her_ee_pose);
+    setEEPos(her_ee_pose);
 
-    if(temp_z > 1.0)
-      break;
+    //if(temp_z > 1.0)
+    //  break;
   }
+  
   rtde_control.stopScript();
   rtde_receive.disconnect();
 
