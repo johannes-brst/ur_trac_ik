@@ -532,6 +532,77 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
   printf("End Move Arm \n");
 }
 
+void tests()
+{
+  double temp_z = 0.274;
+
+  boost::posix_time::ptime start_time;
+  boost::posix_time::time_duration diff;
+  start_time = boost::posix_time::microsec_clock::local_time();
+
+  std::vector<double> hin_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
+                                     -0.0157949, 0.1246475, 0.9920754, 0.4,
+                                     0.0331173, 0.9917200, -0.1240756, 0.736058};
+
+  std::vector<double> her_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
+                                     -0.0157949, 0.1246475, 0.9920754, 0.4,
+                                     0.0331173, 0.9917200, -0.1240756, 0.274};
+  setEEPos(her_ee_pose);
+  while (true)
+  {
+    // test for fluid movement
+    if (temp_z < 0.73)
+    {
+      temp_z += 0.01;
+    }
+    if (rtde_receive.getActualTCPPose().at(2) > 0.73)
+      break;
+
+    std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
+                                       -0.0157949, 0.1246475, 0.9920754, 0.4,
+                                       0.0331173, 0.9917200, -0.1240756, temp_z};
+    setEEPos(new_ee_pose);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    /*setEEPos(hin_ee_pose);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    if (std::abs(rtde_receive.getActualTCPPose().at(0) - hin_ee_pose.at(3)) < 0.01)
+    {
+      if (std::abs(rtde_receive.getActualTCPPose().at(1) - hin_ee_pose.at(7)) < 0.01)
+      {
+        if (std::abs(rtde_receive.getActualTCPPose().at(2) - hin_ee_pose.at(11)) < 0.01)
+        {
+          std::cout << "hin_ee_pose has been reached! Killing programm!" << std::endl;
+          break;
+        }
+      }
+    }
+
+    setEEPos(her_ee_pose);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    if (std::abs(rtde_receive.getActualTCPPose().at(0) - her_ee_pose.at(3)) < 0.01)
+    {
+      if (std::abs(rtde_receive.getActualTCPPose().at(1) - her_ee_pose.at(7)) < 0.01)
+      {
+        if (std::abs(rtde_receive.getActualTCPPose().at(2) - her_ee_pose.at(11)) < 0.01)
+        {
+          std::cout << "hin_ee_pose has been reached! Killing programm!" << std::endl;
+          break;
+        }
+      }
+    }*/
+
+    diff = boost::posix_time::microsec_clock::local_time() - start_time;
+    double elapsed = diff.total_nanoseconds() / 1e9;
+    double kill_after = 10.0;
+    if (elapsed > kill_after)
+    {
+      std::cout << "Killing program after " << kill_after << " seconds!" << std::endl;
+      break;
+    }
+  }
+  return;
+}
+
 int main(int argc, char **argv)
 {
   ROS_INFO("ROS_INFO"); //need to call ROS_INFO one time, so std::cout prints work
@@ -572,76 +643,19 @@ int main(int argc, char **argv)
   //std::vector<double> test_start = {1.67858,-1.49047,-1.38178,0.07177,-0.0568994,0.0680332};
   //rtde_control.moveJ(test_start);
 
-  std::vector<double> ee_pose = {0.02047534, 0.08266832, 0.99636675, 0.15177,
-                                 0.33334069, 0.93898887, -0.08475784, 0.4,
-                                 -0.94258408, 0.33386503, -0.0083306, 0.206058};
-
-  //setEEPos(ee_pose);
-  //printf("DEBUG: main() #2\n");
-
-  startCK();
-  double temp_z = 0.39744;
-
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-  std::vector<double> hin_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
-                                     -0.0157949, 0.1246475, 0.9920754, 0.4,
-                                     0.0331173, 0.9917200, -0.1240756, 0.736058};
-  setEEPos(hin_ee_pose);
-  std::vector<double> her_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
+  std::vector<double> ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
                                      -0.0157949, 0.1246475, 0.9920754, 0.4,
                                      0.0331173, 0.9917200, -0.1240756, 0.274};
 
-  boost::posix_time::ptime start_time;
-  boost::posix_time::time_duration diff;
-  start_time = boost::posix_time::microsec_clock::local_time();
-  while (true)
-  {
+  //printf("DEBUG: main() #2\n");
+  setEEPos(ee_pose);
+  startCK();
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-    //temp_z += 0.001;
-    //std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15015,
-    //                            -0.0157949, 0.1246475, 0.9920754, -0.31120,
-    //                            0.0331173, 0.9917200, -0.1240756, temp_z};
-    setEEPos(hin_ee_pose);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    if (std::abs(rtde_receive.getActualTCPPose().at(0) - hin_ee_pose.at(3)) < 0.01)
-    {
-      if (std::abs(rtde_receive.getActualTCPPose().at(1) - hin_ee_pose.at(7)) < 0.01)
-      {
-        if (std::abs(rtde_receive.getActualTCPPose().at(2) - hin_ee_pose.at(11)) < 0.01)
-        {
-          std::cout << "hin_ee_pose has been reached! Killing programm!" << std::endl;
-          break;
-        }
-      }
-    }
-
-    setEEPos(her_ee_pose);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    if (std::abs(rtde_receive.getActualTCPPose().at(0) - her_ee_pose.at(3)) < 0.01)
-    {
-      if (std::abs(rtde_receive.getActualTCPPose().at(1) - her_ee_pose.at(7)) < 0.01)
-      {
-        if (std::abs(rtde_receive.getActualTCPPose().at(2) - her_ee_pose.at(11)) < 0.01)
-        {
-          std::cout << "hin_ee_pose has been reached! Killing programm!" << std::endl;
-          break;
-        }
-      }
-    }
-
-    diff = boost::posix_time::microsec_clock::local_time() - start_time;
-    double elapsed = diff.total_nanoseconds() / 1e9;
-    double kill_after = 10.0;
-    if (elapsed > 10.0)
-    {
-      std::cout << "Killing program after " << kill_after << " seconds!" << std::endl;
-      break;
-    }
-    //if(temp_z > 1.0)
-    //  break;
-  }
-
+  /*while(true){
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }*/
+  tests();
   rtde_control.stopScript();
   rtde_receive.disconnect();
 
