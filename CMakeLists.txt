@@ -8,6 +8,7 @@ endif()
 find_package(catkin REQUIRED
   COMPONENTS
     trac_ik_lib
+    std_msgs
 )
 find_package(ur_rtde REQUIRED)
 

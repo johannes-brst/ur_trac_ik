@@ -15,6 +15,9 @@
   <build_depend condition="$ROS_DISTRO == noetic">liborocos-kdl-dev</build_depend>
   <build_depend>libnlopt-dev</build_depend>
   <build_depend condition="$ROS_DISTRO == noetic">libnlopt-cxx-dev</build_depend>
+  <build_depend>std_msgs</build_depend>
+  
+  <build_export_depend>std_msgs</build_export_depend>
 
   <exec_depend>boost</exec_depend>
   <exec_depend condition="$ROS_DISTRO != noetic">orocos_kdl</exec_depend>
@@ -24,5 +27,6 @@
   <exec_depend>libnlopt-dev</exec_depend>
   <exec_depend>libnlopt0</exec_depend>
   <exec_depend>pr2_description</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
 
 </package>
