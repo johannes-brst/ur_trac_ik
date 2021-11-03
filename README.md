@@ -7,6 +7,7 @@ Currently, there only exists an ik\_tests program that compares KDL's Pseudoinve
 ## build and run
 
 compile with: catkin_make
+
 run with: roslaunch trac_ik_examples pr2_arm.launch
 
 ## Requirements
