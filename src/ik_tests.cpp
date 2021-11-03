@@ -60,7 +60,7 @@ double timestamp = 0;
 bool CKDONE = false;
 std::mutex mtx;
 std::vector<double> eePos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-;
+
 bool modified = false;
 std::thread thr;
 
@@ -81,8 +81,10 @@ static void loopCK()
   //std::vector<double> startPose = {-0.1,0.4,0.5, 2.938,-2.82,1.479};
   //std::vector<double> startPose = {-0.1, 0.4, 0.5, 4.356, -0.529, -0.587};
   //rtde_control.servoJ(rtde_control.getInverseKinematics(startPose), 1, 1, 0.1, 0.2, 300);
+
   //printf("DEBUG:  loopCK\n");
   //printf("DEBUG: eePos.size(): %lu \n", eePos.size());
+
   while (!CKDONE)
   {
     std::vector<double> pos;
@@ -304,6 +306,9 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   // IK solver.
   TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps, TRAC_IK::Distance);
   //printf("DEBUG: tracik_solver init done\n");
+
+  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps,TRAC_IK::Distance);
+  printf("DEBUG: tracik_solver init done\n");
   KDL::Chain chain;
   KDL::JntArray ll, ul; //lower joint limits, upper joint limits
 
@@ -329,7 +334,9 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   printf("\nUsing %d joints\n", chain.getNrOfJoints());
 
   // Set up KDL IK
+
   KDL::ChainFkSolverPos_recursive fk_solver(chain); // Forward kin. solver
+
   //KDL::ChainIkSolverVel_pinv vik_solver(chain);                                         // PseudoInverse vel solver
   //KDL::ChainIkSolverPos_NR_JL kdl_solver(chain, ll, ul, fk_solver, vik_solver, 1, eps); // Joint Limit Solver
   // 1 iteration per solve (will wrap in timed loop to compare with TRAC-IK)
@@ -401,7 +408,6 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   start_time = boost::posix_time::microsec_clock::local_time();
   //printf("DEBUG: chain number of segments: %u\n", chain.getNrOfSegments());
   rc = tracik_solver.CartToJnt(jnt, end_effector_pose, result);
-
   diff = boost::posix_time::microsec_clock::local_time() - start_time;
   elapsed = diff.total_nanoseconds() / 1e9;
   std::cout << "Time needed for calculation:" << elapsed << "seconds" << std::endl;
@@ -455,6 +461,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
   std::vector<double> actual_q = rtde_receive.getActualQ();
 
   KDL::JntArray result = calculateSolution(num_samples, actual_q, eePos, chain_start, chain_end, timeout, urdf_param);
+
   printf("\n");
 
   bool postest = false; // used for testing and getting ee_pose from joint_pos
