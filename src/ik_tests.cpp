@@ -47,6 +47,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define CK
 
+using namespace Eigen;
 using namespace ur_rtde;
 
 RTDEControlInterface rtde_control("172.30.10.1");
@@ -60,7 +61,6 @@ double timestamp = 0;
 bool CKDONE = false;
 std::mutex mtx;
 std::vector<double> eePos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
 bool modified = false;
 std::thread thr;
 
@@ -307,8 +307,6 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps, TRAC_IK::Distance);
   //printf("DEBUG: tracik_solver init done\n");
 
-  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps,TRAC_IK::Distance);
-  printf("DEBUG: tracik_solver init done\n");
   KDL::Chain chain;
   KDL::JntArray ll, ul; //lower joint limits, upper joint limits
 
@@ -361,6 +359,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
 
   printf("\n");
   KDL::Rotation rotation = KDL::Rotation(ee_pose[0], ee_pose[4], ee_pose[8], ee_pose[1], ee_pose[5], ee_pose[9], ee_pose[2], ee_pose[6], ee_pose[10]);
+  //KDL::Rotation rotation = KDL::Rotation(ee_pose[0], ee_pose[1], ee_pose[2], ee_pose[4], ee_pose[5], ee_pose[6], ee_pose[8], ee_pose[9], ee_pose[10]);
   KDL::Vector goal = KDL::Vector(ee_pose[3], ee_pose[7], ee_pose[11]);
   std::cout << "Goal (xyz): " << goal << "\n"
             << std::endl;
@@ -524,7 +523,17 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
       }
     }
     if (modified)
+    {
+      actual_q = rtde_receive.getActualQ();
+
+      printf("reached joint angles:\n");
+      for (int i = 0; i <= actual_q.size() - 1; i++)
+        std::cout << actual_q[i] << " " << std::endl;
+      printf("\n");
+
+      rtde_control.speedStop(); 
       return;
+    }
   }
 
   actual_q = rtde_receive.getActualQ();
@@ -610,6 +619,80 @@ void tests()
   return;
 }
 
+MatrixXd S(MatrixXd n)
+{
+  MatrixXd Sn(3, 3);
+  Sn << 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0;
+  Sn(1) = n(2) * -1;
+  Sn(2) = n(1);
+  Sn(3) = n(2);
+  Sn(5) = n(0) * -1;
+  Sn(6) = n(1) * -1;
+  Sn(7) = n(0);
+  return Sn;
+}
+
+//rodrigues calculation for rotation vector -> rotation matrix
+std::vector<double> rodrigues(std::vector<double> &_r)
+{
+  VectorXd r(3);
+  r << _r.at(0), _r.at(1), _r.at(2);
+
+  double norm = r.norm();
+  double theta = norm;
+  //std::vector<double> R(9, 0.0);
+  MatrixXd R(3, 3);
+  R << 0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0,
+      0.0, 0.0, 0.0;
+  if (theta > 1e-30)
+  {
+    printf("theta > 1e-30");
+    MatrixXd n(3, 3);
+    n = r / theta; //DivideVectorByValue(r, theta);
+    std::cout << "n = " << n << "\n";
+    MatrixXd Sn(3, 3);
+    Sn = S(n);
+    std::cout << "Sn = " << Sn << "\n";
+    MatrixXd eye(3, 3);
+    eye << 1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0;
+
+    R = (eye + (Sn * sin(theta)));
+    std::cout << "R = " << R << "\n";
+    std::cout << "Sn.dot(Sn) = " << Sn * Sn << "\n";
+    std::cout << "(Sn.dot(Sn) * (1 - cos(theta))) = " << (Sn * Sn) * (1 - cos(theta)) << "\n";
+    R = R + ((Sn * Sn) * (1 - cos(theta)));
+  }
+  else
+  {
+    MatrixXd Sr(3, 3);
+    Sr = S(r);
+    double theta2 = theta * theta;
+    MatrixXd eye(3, 3);
+    eye << 1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
+        0.0, 0.0, 1.0;
+    R = (eye.array() + (1 - sin(theta2) / 6.0));
+    R = R * Sr;
+    R = R + (0.5 - std::cos(theta2) / 24.0) * (Sr * Sr);
+  }
+  std::vector<double> Rd(9, 0.0);
+  int xy = 0;
+  for (int x = 0; x < R.rows(); ++x)
+  {
+    for (int y = 0; y < R.cols(); y++)
+    {
+      Rd.at(xy) = R(y, x);
+      xy++;
+    }
+  }
+  return Rd;
+}
+
 int main(int argc, char **argv)
 {
   ROS_INFO("ROS_INFO"); //need to call ROS_INFO one time, so std::cout prints work
@@ -650,19 +733,34 @@ int main(int argc, char **argv)
   //std::vector<double> test_start = {1.67858,-1.49047,-1.38178,0.07177,-0.0568994,0.0680332};
   //rtde_control.moveJ(test_start);
 
-  std::vector<double> ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
-                                     -0.0157949, 0.1246475, 0.9920754, 0.4,
-                                     0.0331173, 0.9917200, -0.1240756, 0.274};
+  printf("Starting rodrigues test:\n");
+  std::vector<double> test = {0.018, -2.168, -2.277};
+  std::vector<double> rod_test(9);
+  rod_test = rodrigues(test);
+  printf("Test: \n");
+  for (int j = 0; j < rod_test.size(); j++)
+  {
+    std::cout << rod_test.at(j) << " ";
+  }
+  printf("\n");
+
+  std::vector<double> ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.085,
+                                 -0.0157949, 0.1246475, 0.9920754, 0.56,
+                                 0.0331173, 0.9917200, -0.1240756, 0.530};
+
+  std::vector<double> ee_pose_with_rodriguez = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.085,
+                                                rod_test.at(1), rod_test.at(4), rod_test.at(5), 0.560,
+                                                rod_test.at(2), rod_test.at(5), rod_test.at(7), 0.530};
 
   //printf("DEBUG: main() #2\n");
-  setEEPos(ee_pose);
+  setEEPos(ee_pose_with_rodriguez);
   startCK();
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   /*while(true){
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }*/
-  tests();
+  //tests();
   rtde_control.stopScript();
   rtde_receive.disconnect();
 
