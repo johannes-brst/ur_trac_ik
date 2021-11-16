@@ -50,10 +50,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Eigen;
 using namespace ur_rtde;
 
-RTDEControlInterface rtde_control("172.30.10.1");
-RTDEReceiveInterface rtde_receive("172.30.10.1");
-//RTDEControlInterface rtde_control("127.0.0.1");
-//RTDEReceiveInterface rtde_receive("127.0.0.1");
+//RTDEControlInterface rtde_control("172.30.10.1");
+//RTDEReceiveInterface rtde_receive("172.30.10.1");
+RTDEControlInterface rtde_control("127.0.0.1");
+RTDEReceiveInterface rtde_receive("127.0.0.1");
+
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
 double _timeout;
@@ -287,8 +288,8 @@ void testRandomSamples(double num_samples, std::string chain_start, std::string 
       }
       solutions.push_back(result);
     }
-    //if (int((double)i / num_samples * 100) % 10 == 0)
-    //ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
+    if (int((double)i / num_samples * 100) % 10 == 0)
+      ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
   }
 
   writeToCsv(solutions);
@@ -361,6 +362,8 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   KDL::Rotation rotation = KDL::Rotation(ee_pose[0], ee_pose[4], ee_pose[8], ee_pose[1], ee_pose[5], ee_pose[9], ee_pose[2], ee_pose[6], ee_pose[10]);
   //KDL::Rotation rotation = KDL::Rotation(ee_pose[0], ee_pose[1], ee_pose[2], ee_pose[4], ee_pose[5], ee_pose[6], ee_pose[8], ee_pose[9], ee_pose[10]);
   KDL::Vector goal = KDL::Vector(ee_pose[3], ee_pose[7], ee_pose[11]);
+  std::cout << "Ration Matrix: " << rotation << "\n"
+            << std::endl;
   std::cout << "Goal (xyz): " << goal << "\n"
             << std::endl;
 
@@ -474,7 +477,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
 
-  double max_vel = 3.14; // max possible value is 3.14
+  double max_vel = 1.0; // max possible value is 3.14
   double acceleration = 40.0;
   double dt = 0.02;
   actual_q = rtde_receive.getActualQ();
@@ -734,7 +737,7 @@ int main(int argc, char **argv)
   //rtde_control.moveJ(test_start);
 
   printf("Starting rodrigues test:\n");
-  std::vector<double> test = {0.018, -2.168, -2.277};
+  std::vector<double> test = {0.01, 0.01, 0.01};
   std::vector<double> rod_test(9);
   rod_test = rodrigues(test);
   printf("Test: \n");
@@ -749,8 +752,8 @@ int main(int argc, char **argv)
                                  0.0331173, 0.9917200, -0.1240756, 0.530};
 
   std::vector<double> ee_pose_with_rodriguez = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.085,
-                                                rod_test.at(1), rod_test.at(4), rod_test.at(5), 0.560,
-                                                rod_test.at(2), rod_test.at(5), rod_test.at(7), 0.530};
+                                                rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.560,
+                                                rod_test.at(2), rod_test.at(5), rod_test.at(8), 0.530};
 
   //printf("DEBUG: main() #2\n");
   setEEPos(ee_pose_with_rodriguez);

@@ -7,8 +7,8 @@
   <arg name="timeout" default="0.05" />
   <!-- $(find xacro)/xacro - -inorder '$(find ur_e_description)/urdf/ur5e_robot.urdf.xacro' || '$(find trac_ik_examples)/urdf/ur5e_with_hand_fused.urdf.xacro'-->
   <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find ur_e_description)/urdf/ur5e_robot.urdf.xacro'" />
-
-  <node name="trac_ik_tests" pkg="trac_ik_examples" type="ik_tests" output="screen">
+  <!-- launch-prefix="gdb -ex run"-->
+  <node name="trac_ik_tests" pkg="trac_ik_examples" type="ik_tests" output="screen" >
 
     <param name="num_samples" value="$(arg num_samples)"/>
     <param name="chain_start" value="$(arg chain_start)"/>
