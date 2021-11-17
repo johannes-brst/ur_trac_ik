@@ -445,7 +445,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   printf("%f, ", rtde_receive.getActualQ().at(3));
   printf("%f, ", rtde_receive.getActualQ().at(4));
   printf("%f\n", rtde_receive.getActualQ().at(5));
-
+  printf("\n");
   printf("TCP offset x: %f\n", rtde_receive.getActualTCPPose().at(0));
   printf("TCP offset y: %f\n", rtde_receive.getActualTCPPose().at(1));
   printf("TCP offset z: %f\n", rtde_receive.getActualTCPPose().at(2));
@@ -767,10 +767,10 @@ int main(int argc, char **argv)
   setEEPos(ee_pose_with_rodriguez);
   startCK();
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  //while (true)
-  //{
-  //  std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  //}
+  while (true)
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
   //tests();
 
   rtde_control.stopScript();
