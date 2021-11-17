@@ -50,10 +50,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Eigen;
 using namespace ur_rtde;
 
-//RTDEControlInterface rtde_control("172.30.10.1");
-//RTDEReceiveInterface rtde_receive("172.30.10.1");
-RTDEControlInterface rtde_control("127.0.0.1");
-RTDEReceiveInterface rtde_receive("127.0.0.1");
+RTDEControlInterface rtde_control("172.30.10.1");
+RTDEReceiveInterface rtde_receive("172.30.10.1");
+//RTDEControlInterface rtde_control("127.0.0.1");
+//RTDEReceiveInterface rtde_receive("127.0.0.1");
 
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
@@ -170,7 +170,7 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
   }
   for (int i = 0; i < joint_config.size(); i++)
   {
-    if (std::abs(tmp_speed[i]) > 0.002)
+    if (std::abs(tmp_speed[i]) > 0.001)
     {
       joint_speed[i] = std::min(tmp_speed[i] * 5, max_vel);
       if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
@@ -288,8 +288,8 @@ void testRandomSamples(double num_samples, std::string chain_start, std::string 
       }
       solutions.push_back(result);
     }
-    if (int((double)i / num_samples * 100) % 10 == 0)
-      ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
+    //if (int((double)i / num_samples * 100) % 10 == 0)
+    //  ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
   }
 
   writeToCsv(solutions);
@@ -477,7 +477,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
 
-  double max_vel = 1.0; // max possible value is 3.14
+  double max_vel = 3.14; // max possible value is 3.14
   double acceleration = 40.0;
   double dt = 0.02;
   actual_q = rtde_receive.getActualQ();
@@ -533,8 +533,16 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
       for (int i = 0; i <= actual_q.size() - 1; i++)
         std::cout << actual_q[i] << " " << std::endl;
       printf("\n");
-
-      rtde_control.speedStop(); 
+      // compare acutal TCP Pose with wanted ee_pose
+      std::cout << "compare reached position with wanted position:\n"
+                << std::endl;
+      std::cout << "TCP x:" << rtde_receive.getActualTCPPose().at(0) - eePos.at(3) << "\n"
+                << std::endl;
+      std::cout << "TCP y:" << rtde_receive.getActualTCPPose().at(1) - eePos.at(7) << "\n"
+                << std::endl;
+      std::cout << "TCP z:" << rtde_receive.getActualTCPPose().at(2) - eePos.at(11) << "\n"
+                << std::endl;
+      rtde_control.speedStop();
       return;
     }
   }
@@ -545,7 +553,15 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
   for (int i = 0; i <= actual_q.size() - 1; i++)
     std::cout << actual_q[i] << " " << std::endl;
   printf("\n");
-
+  // compare acutal TCP Pose with wanted ee_pose
+  std::cout << "compare reached position with wanted position:\n"
+            << std::endl;
+  std::cout << "TCP x:" << rtde_receive.getActualTCPPose().at(0) - eePos.at(3) << "\n"
+            << std::endl;
+  std::cout << "TCP y:" << rtde_receive.getActualTCPPose().at(1) - eePos.at(7) << "\n"
+            << std::endl;
+  std::cout << "TCP z:" << rtde_receive.getActualTCPPose().at(2) - eePos.at(11) << "\n"
+            << std::endl;
   rtde_control.speedStop();
 
   printf("End Move Arm \n");
@@ -567,12 +583,13 @@ void tests()
                                      -0.0157949, 0.1246475, 0.9920754, 0.4,
                                      0.0331173, 0.9917200, -0.1240756, 0.274};
   setEEPos(her_ee_pose);
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   while (true)
   {
     // test for fluid movement
     if (temp_z < 0.73)
     {
-      temp_z += 0.01;
+      temp_z += 0.1;
     }
     if (rtde_receive.getActualTCPPose().at(2) > 0.73)
       break;
@@ -581,7 +598,7 @@ void tests()
                                        -0.0157949, 0.1246475, 0.9920754, 0.4,
                                        0.0331173, 0.9917200, -0.1240756, temp_z};
     setEEPos(new_ee_pose);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     /*setEEPos(hin_ee_pose);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     if (std::abs(rtde_receive.getActualTCPPose().at(0) - hin_ee_pose.at(3)) < 0.01)
@@ -724,20 +741,11 @@ int main(int argc, char **argv)
   //testRandomSamples(num_samples, chain_start, chain_end, timeout, urdf_param);
   //moveArm("172.30.10.1", ee_pose, num_samples, chain_start, chain_end, timeout, urdf_param);
 
-  // Useful when you make a script that loops over multiple launch files that test different robot chains
-  // std::vector<char *> commandVector;
-  // commandVector.push_back((char*)"killall");
-  // commandVector.push_back((char*)"-9");
-  // commandVector.push_back((char*)"roslaunch");
-  // commandVector.push_back(NULL);
-  // char **command = &commandVector[0];
-  // execvp(command[0],command);
-
   //std::vector<double> test_start = {1.67858,-1.49047,-1.38178,0.07177,-0.0568994,0.0680332};
   //rtde_control.moveJ(test_start);
 
   printf("Starting rodrigues test:\n");
-  std::vector<double> test = {0.01, 0.01, 0.01};
+  std::vector<double> test = {0.018, -2.168, -2.277};
   std::vector<double> rod_test(9);
   rod_test = rodrigues(test);
   printf("Test: \n");
@@ -747,9 +755,9 @@ int main(int argc, char **argv)
   }
   printf("\n");
 
-  std::vector<double> ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.085,
-                                 -0.0157949, 0.1246475, 0.9920754, 0.56,
-                                 0.0331173, 0.9917200, -0.1240756, 0.530};
+  std::vector<double> ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
+                                     -0.0157949, 0.1246475, 0.9920754, 0.4,
+                                     0.0331173, 0.9917200, -0.1240756, 0.274};
 
   std::vector<double> ee_pose_with_rodriguez = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.085,
                                                 rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.560,
@@ -759,11 +767,12 @@ int main(int argc, char **argv)
   setEEPos(ee_pose_with_rodriguez);
   startCK();
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-  /*while(true){
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }*/
+  //while (true)
+  //{
+  //  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  //}
   //tests();
+
   rtde_control.stopScript();
   rtde_receive.disconnect();
 
