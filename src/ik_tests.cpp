@@ -477,7 +477,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
 
-  double max_vel = 3.14; // max possible value is 3.14
+  double max_vel = 0.5; // max possible value is 3.14
   double acceleration = 10.0;
   double dt = 0.02;
   actual_q = rtde_receive.getActualQ();
