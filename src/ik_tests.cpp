@@ -478,7 +478,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
   std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
 
   double max_vel = 3.14; // max possible value is 3.14
-  double acceleration = 40.0;
+  double acceleration = 10.0;
   double dt = 0.02;
   actual_q = rtde_receive.getActualQ();
 
@@ -542,7 +542,6 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
                 << std::endl;
       std::cout << "TCP z:" << rtde_receive.getActualTCPPose().at(2) - eePos.at(11) << "\n"
                 << std::endl;
-      rtde_control.speedStop();
       return;
     }
   }
@@ -589,7 +588,7 @@ void tests()
     // test for fluid movement
     if (temp_z < 0.73)
     {
-      temp_z += 0.1;
+      temp_z += 0.05;
     }
     if (rtde_receive.getActualTCPPose().at(2) > 0.73)
       break;
@@ -767,11 +766,11 @@ int main(int argc, char **argv)
   setEEPos(ee_pose_with_rodriguez);
   startCK();
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  while (true)
-  {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
-  //tests();
+  //while (true)
+  //{
+  //  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  //}
+  tests();
 
   rtde_control.stopScript();
   rtde_receive.disconnect();
