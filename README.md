@@ -10,4 +10,8 @@ compile with: catkin_make
 
 run with: roslaunch trac_ik_examples pr2_arm.launch
 
+## URDF
+
+The size of the collision box at the end of the ur5e.urdf.xacro file should be adjusted accoring to the box, the qbhand is holding
+
 ## Requirements
