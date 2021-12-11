@@ -811,3 +811,11 @@ Not yet implemented.
 -8 = E_SVD_FAILED 	
 Internal svd calculation failed.
 */
+
+//shoulder: 
+// 3.78°
+// -183.68°
+/* Prüfen SChultergelenkposition, damit der Ellbogen nicht auf den Tisch kracht
+  Winkel der Lösung prüfen, falls Kollision möglich andere Lösungemethode wählen und die Lösung mit geringster Distanz und keiner Kollision suchen
+  Also beim ik berechnen, parameter distance dann ggf entfernen
+*/
