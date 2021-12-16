@@ -296,6 +296,29 @@ void testRandomSamples(double num_samples, std::string chain_start, std::string 
   std::cout << "TRAC-IK found " << success << " solutions (" << 100.0 * success / num_samples << "\%) with an average of " << total_time / num_samples << " secs per sample" << std::endl;
 }
 
+KDL::JntArray findClosestSolution(std::vector<KDL::JntArray> solutions, std::vector<double> actual_q)
+{
+    printf("findClosestSolution\n");
+    int index_min = 0;
+    double min = 999.0;
+    double difference = 0.0;
+    for(int i = 0; i < 8; i++){
+        if(solutions[i].size() > 1){
+            difference = 0.0;
+            for(int j = 0; j < actual_q.size()-1; j++){
+                difference += std::abs(solutions[i][j] - actual_q[j]);
+            }
+            if(difference < min){
+                min = difference;
+                index_min = i;
+            }
+        }  
+    }
+    std::cout << vec2csv(solutions[index_min]);
+    printf("\n");
+    return index_min;
+}
+
 KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos, std::vector<double> ee_pose, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param)
 {
   //printf("DEBUG: calculateSolution\n");
@@ -821,4 +844,7 @@ Internal svd calculation failed.
 /* Prüfen SChultergelenkposition, damit der Ellbogen nicht auf den Tisch kracht
   Winkel der Lösung prüfen, falls Kollision möglich andere Lösungemethode wählen und die Lösung mit geringster Distanz und keiner Kollision suchen
   Also beim ik berechnen, parameter distance dann ggf entfernen
+  getSolutions liefert alles Lösungen
+  carttojnt liefert in Distance mode liefert Lösung mit geringenstem error wert
+  versuchen errors zu bekommen um nächsten Wert zu bekommen oder über findclosestsolution Lösung suchen. 
 */
