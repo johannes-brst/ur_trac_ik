@@ -50,10 +50,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Eigen;
 using namespace ur_rtde;
 
-RTDEControlInterface rtde_control("172.30.10.1");
-RTDEReceiveInterface rtde_receive("172.30.10.1");
-//RTDEControlInterface rtde_control("127.0.0.1");
-//RTDEReceiveInterface rtde_receive("127.0.0.1");
+//RTDEControlInterface rtde_control("172.30.10.1");
+//RTDEReceiveInterface rtde_receive("172.30.10.1");
+RTDEControlInterface rtde_control("127.0.0.1");
+RTDEReceiveInterface rtde_receive("127.0.0.1");
 
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
@@ -434,6 +434,9 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
     {
       std::cout << result(i) << std::endl;
     }
+    std::vector<KDL::JntArray> solutions;
+    tracik_solver.getSolutions(solutions);
+    std::cout << "Number of found solutions: " << solutions.size() << std::endl;
     //std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
     //rtde_control.moveJ(goal);
     printf("\n");
