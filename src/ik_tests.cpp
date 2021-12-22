@@ -50,10 +50,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Eigen;
 using namespace ur_rtde;
 
-// RTDEControlInterface rtde_control("172.30.10.1");
-// RTDEReceiveInterface rtde_receive("172.30.10.1");
-RTDEControlInterface rtde_control("127.0.0.1");
-RTDEReceiveInterface rtde_receive("127.0.0.1");
+RTDEControlInterface rtde_control("172.30.10.1");
+RTDEReceiveInterface rtde_receive("172.30.10.1");
+//RTDEControlInterface rtde_control("127.0.0.1");
+//RTDEReceiveInterface rtde_receive("127.0.0.1");
 
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
@@ -296,7 +296,6 @@ void testRandomSamples(double num_samples, std::string chain_start, std::string 
   std::cout << "TRAC-IK found " << success << " solutions (" << 100.0 * success / num_samples << "\%) with an average of " << total_time / num_samples << " secs per sample" << std::endl;
 }
 
-
 int findClosestSolution(std::vector<double> actual_q, std::vector<KDL::JntArray> solutions)
 {
   printf("findClosestSolution\n");
@@ -467,10 +466,17 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
     printf("\n");
     double lower_table_collision = -3.2058207701;
     double upper_table_collision = 0.065973445725;
-    if (result(1) > -3.2058207701 && result(1) < 0.065973445725)
+    while (result(1) < -2.9147 || result(1) > -0.261799) // -167° || -15°
     {
       printf("Found solution could result in collision with table. Searching for different solution.");
-      findClosestSolution(rtde_receive.getActualQ(), solutions);
+      solutions.erase(std::remove(solutions.begin(), solutions.end(), result), solutions.end());
+      result = solutions.at(findClosestSolution(rtde_receive.getActualQ(), solutions));
+      printf("new Solution:\n");
+      for (unsigned int i = 0; i < chain.getNrOfJoints(); i++)
+      {
+        std::cout << result(i) << std::endl;
+      }
+      printf("\n");
     }
   }
 
@@ -621,15 +627,15 @@ void tests()
   while (true)
   {
     // test for fluid movement
-    if (temp_z < 0.73)
+    if (temp_z < 0.244)
     {
       temp_z += 0.05;
     }
     if (rtde_receive.getActualTCPPose().at(2) > 0.73)
       break;
 
-    std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.15177,
-                                       -0.0157949, 0.1246475, 0.9920754, 0.4,
+    std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.114,
+                                       -0.0157949, 0.1246475, 0.9920754, 0.502,
                                        0.0331173, 0.9917200, -0.1240756, temp_z};
     setEEPos(new_ee_pose);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -663,7 +669,7 @@ void tests()
 
     diff = boost::posix_time::microsec_clock::local_time() - start_time;
     double elapsed = diff.total_nanoseconds() / 1e9;
-    double kill_after = 10.0;
+    double kill_after = 5.0;
     if (elapsed > kill_after)
     {
       std::cout << "Killing program after " << kill_after << " seconds!" << std::endl;
