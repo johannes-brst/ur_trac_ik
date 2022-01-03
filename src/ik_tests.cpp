@@ -470,6 +470,11 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
     {
       printf("Found solution could result in collision with table. Searching for different solution.");
       solutions.erase(std::remove(solutions.begin(), solutions.end(), result), solutions.end());
+      if (solutions.size() <= 0)
+      {
+        printf("Error: Solutions size =0 after remove one or more solutions with collisions. Killing Program!\n");
+        exit(-1);
+      }
       result = solutions.at(findClosestSolution(rtde_receive.getActualQ(), solutions));
       printf("new Solution:\n");
       for (unsigned int i = 0; i < chain.getNrOfJoints(); i++)
@@ -504,7 +509,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
   std::vector<double> actual_q = rtde_receive.getActualQ();
 
   KDL::JntArray result = calculateSolution(num_samples, actual_q, eePos, chain_start, chain_end, timeout, urdf_param);
-  
+
   printf("\n");
 
   bool postest = false; // used for testing and getting ee_pose from joint_pos
