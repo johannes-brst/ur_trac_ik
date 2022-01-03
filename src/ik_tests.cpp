@@ -464,9 +464,9 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
     // std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
     // rtde_control.moveJ(goal);
     printf("\n");
-    double lower_table_collision = -3.2058207701;
-    double upper_table_collision = 0.065973445725;
-    while (result(1) < -2.9147 || result(1) > -0.261799) // -167° || -15°
+    double lower_table_collision = -2.9670597284;
+    double upper_table_collision = -0.16720254234;
+    while (result(1) < lower_table_collision || result(1) > upper_table_collision) // -167° || -15°
     {
       printf("Found solution could result in collision with table. Searching for different solution.");
       solutions.erase(std::remove(solutions.begin(), solutions.end(), result), solutions.end());
@@ -504,7 +504,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
   std::vector<double> actual_q = rtde_receive.getActualQ();
 
   KDL::JntArray result = calculateSolution(num_samples, actual_q, eePos, chain_start, chain_end, timeout, urdf_param);
-
+  
   printf("\n");
 
   bool postest = false; // used for testing and getting ee_pose from joint_pos
@@ -518,7 +518,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
 
-  double max_vel = 0.5; // max possible value is 3.14
+  double max_vel = 1.5; // max possible value is 3.14
   double acceleration = 10.0;
   double dt = 0.02;
   actual_q = rtde_receive.getActualQ();
@@ -631,9 +631,9 @@ void tests()
     {
       temp_z += 0.05;
     }
-    if (rtde_receive.getActualTCPPose().at(2) > 0.73)
+    /*if (rtde_receive.getActualTCPPose().at(2) > 0.73)
       break;
-
+    */
     std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.114,
                                        -0.0157949, 0.1246475, 0.9920754, 0.502,
                                        0.0331173, 0.9917200, -0.1240756, temp_z};
@@ -669,7 +669,7 @@ void tests()
 
     diff = boost::posix_time::microsec_clock::local_time() - start_time;
     double elapsed = diff.total_nanoseconds() / 1e9;
-    double kill_after = 5.0;
+    double kill_after = 15.0;
     if (elapsed > kill_after)
     {
       std::cout << "Killing program after " << kill_after << " seconds!" << std::endl;

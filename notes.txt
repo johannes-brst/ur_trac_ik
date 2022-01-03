@@ -1,7 +1,3 @@
-- neue test pose für hand definieren
-    - rotation und positionen anders durch base def in urdf
-- ros verhindert weiterhin prints von std::cout, außerhalb von ros kein Problem
-- prüfen ob update der eepos tatsächlich direkt umgesetzt wird
 
 x = -85mm 
 y = 560mm
