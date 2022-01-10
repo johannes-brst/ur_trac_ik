@@ -8,7 +8,7 @@
   <!-- '$(find trac_ik_examples)/urdf/ur5e_description/ur5e_robot.urdf.xacro'" -->
   <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find trac_ik_examples)/urdf/ur5e_description/ur5e_with_hand_fused.urdf.xacro'" />
   <!-- launch-prefix="gdb -ex run"-->
-  <node name="trac_ik_tests" pkg="trac_ik_examples" type="ik_tests" output="screen" >
+  <node name="trac_ik_tests" pkg="trac_ik_examples" type="ik_tests" output="screen">
 
     <param name="num_samples" value="$(arg num_samples)"/>
     <param name="chain_start" value="$(arg chain_start)"/>

@@ -50,10 +50,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Eigen;
 using namespace ur_rtde;
 
-RTDEControlInterface rtde_control("172.30.10.1");
-RTDEReceiveInterface rtde_receive("172.30.10.1");
-//RTDEControlInterface rtde_control("127.0.0.1");
-//RTDEReceiveInterface rtde_receive("127.0.0.1");
+//RTDEControlInterface rtde_control("172.30.10.1");
+//RTDEReceiveInterface rtde_receive("172.30.10.1");
+ RTDEControlInterface rtde_control("127.0.0.1");
+ RTDEReceiveInterface rtde_receive("127.0.0.1");
 
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
@@ -62,7 +62,8 @@ double timestamp = 0;
 bool CKDONE = false;
 std::mutex mtx;
 std::vector<double> eePos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-bool modified = false;
+std::vector<double> start_joint_pos = {0, 0, 0, 0, 0, 0};
+ bool modified = false;
 std::thread thr;
 
 void moveArm(double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param);
@@ -170,7 +171,11 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
   }
   for (int i = 0; i < joint_config.size(); i++)
   {
-    if (std::abs(tmp_speed[i]) > 0.001)
+    if (std::abs(tmp_speed[i]) > 0.3)
+    {
+      joint_speed[i] = max_vel;
+    }
+    else if (std::abs(tmp_speed[i]) > 0.001)
     {
       joint_speed[i] = std::min(tmp_speed[i] * 5, max_vel);
       if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
@@ -185,115 +190,6 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
   }
 
   return joint_speed;
-}
-
-void testRandomSamples(double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param)
-{
-  printf("Testing random samples:\n");
-  double eps = 1e-5;
-  double total_time = 0;
-  uint success = 0;
-  // This constructor parses the URDF loaded in rosparm urdf_param into the
-  // needed KDL structures.  We then pull these out to compare against the KDL
-  // IK solver.
-  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps);
-
-  KDL::Chain chain;
-  KDL::JntArray ll, ul; // lower joint limits, upper joint limits
-
-  bool valid = tracik_solver.getKDLChain(chain);
-
-  if (!valid)
-  {
-    ROS_ERROR("There was no valid KDL chain found");
-    return;
-  }
-
-  valid = tracik_solver.getKDLLimits(ll, ul);
-
-  if (!valid)
-  {
-    ROS_ERROR("There were no valid KDL joint limits found");
-    return;
-  }
-
-  assert(chain.getNrOfJoints() == ll.data.size());
-  assert(chain.getNrOfJoints() == ul.data.size());
-
-  std::cout << "Using" << chain.getNrOfJoints() << "joints" << std::endl;
-
-  KDL::ChainFkSolverPos_recursive fk_solver(chain); // Forward kin. solver
-
-  // Create Nominal chain configuration midway between all joint limits
-  KDL::JntArray nominal(chain.getNrOfJoints());
-
-  for (uint j = 0; j < nominal.data.size(); j++)
-  {
-    nominal(j) = (ll(j) + ul(j)) / 2.0;
-  }
-
-  // Create desired number of valid, random joint configurations
-  std::vector<KDL::JntArray> JointList;
-  KDL::JntArray q(chain.getNrOfJoints());
-
-  for (uint i = 0; i < num_samples; i++)
-  {
-    for (uint j = 0; j < ll.data.size(); j++)
-    {
-      q(j) = fRand(ll(j), ul(j));
-    }
-    JointList.push_back(q);
-  }
-  boost::posix_time::ptime start_time;
-  boost::posix_time::time_duration diff;
-
-  KDL::JntArray result;
-  KDL::Frame end_effector_pose;
-  int rc;
-
-  std::cout << "*** Testing TRAC-IK with " << num_samples << " random samples" << std::endl;
-
-  std::vector<KDL::JntArray> solutions;
-
-  for (uint i = 0; i < num_samples; i++)
-  {
-    fk_solver.JntToCart(JointList[i], end_effector_pose);
-    double elapsed = 0;
-    start_time = boost::posix_time::microsec_clock::local_time();
-    rc = tracik_solver.CartToJnt(nominal, end_effector_pose, result);
-    diff = boost::posix_time::microsec_clock::local_time() - start_time;
-    elapsed = diff.total_nanoseconds() / 1e9;
-    total_time += elapsed;
-    if (rc >= 0)
-    {
-      success++;
-      int zeros_found = 0;
-      for (unsigned int j = 0; j < 6; j++)
-      {
-        if (result(j) == 0.0)
-        {
-          zeros_found += 1;
-        }
-      }
-      if (zeros_found >= 6)
-      {
-        /*for(unsigned int j=0;j<6;j++){
-          std::cout << result(j);
-          if(j < 5 ){
-             std::cout << ", ";
-          }
-        }*/
-        std::cout << rc << std::endl;
-        printf("\n");
-      }
-      solutions.push_back(result);
-    }
-    // if (int((double)i / num_samples * 100) % 10 == 0)
-    //   ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
-  }
-
-  writeToCsv(solutions);
-  std::cout << "TRAC-IK found " << success << " solutions (" << 100.0 * success / num_samples << "\%) with an average of " << total_time / num_samples << " secs per sample" << std::endl;
 }
 
 int findClosestSolution(std::vector<double> actual_q, std::vector<KDL::JntArray> solutions)
@@ -507,7 +403,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 {
   // printf("DEBUG: moveArm\n");
   std::vector<double> actual_q = rtde_receive.getActualQ();
-
+  //start_joint_pos = actual_q;
   KDL::JntArray result = calculateSolution(num_samples, actual_q, eePos, chain_start, chain_end, timeout, urdf_param);
 
   printf("\n");
