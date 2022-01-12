@@ -50,10 +50,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Eigen;
 using namespace ur_rtde;
 
-//RTDEControlInterface rtde_control("172.30.10.1");
-//RTDEReceiveInterface rtde_receive("172.30.10.1");
- RTDEControlInterface rtde_control("127.0.0.1");
- RTDEReceiveInterface rtde_receive("127.0.0.1");
+RTDEControlInterface rtde_control("172.30.10.1");
+RTDEReceiveInterface rtde_receive("172.30.10.1");
+//RTDEControlInterface rtde_control("127.0.0.1");
+//RTDEReceiveInterface rtde_receive("127.0.0.1");
 
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
@@ -63,7 +63,7 @@ bool CKDONE = false;
 std::mutex mtx;
 std::vector<double> eePos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 std::vector<double> start_joint_pos = {0, 0, 0, 0, 0, 0};
- bool modified = false;
+bool modified = false;
 std::thread thr;
 
 void moveArm(double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param);
@@ -171,12 +171,17 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
   }
   for (int i = 0; i < joint_config.size(); i++)
   {
-    if (std::abs(tmp_speed[i]) > 0.2)
+    if (std::abs(tmp_speed[i]) > 0.3)
     {
-      if(tmp_speed[i] > 0)
+      /*if(tmp_speed[i] > 0)
         joint_speed[i] = max_vel;
       else
-        joint_speed[i] = -max_vel;
+        joint_speed[i] = -max_vel;*/
+      joint_speed[i] = std::min(tmp_speed[i] * 8, max_vel); //factor 10 may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
+      if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
+      {
+        joint_speed[i] = tmp_speed[i] * (max_vel / *max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()));
+      }
     }
     else if (std::abs(tmp_speed[i]) > 0.001)
     {
@@ -320,8 +325,8 @@ void testRandomSamples(double num_samples, std::string chain_start, std::string 
       }
       solutions.push_back(result);
     }
-    if (int((double)i / num_samples * 100) % 10 == 0)
-      ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
+    //if (int((double)i / num_samples * 100) % 10 == 0)
+    //  ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
   }
 
   writeToCsv(solutions);
@@ -531,7 +536,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
   std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
 
-  double max_vel = 1.5; // max possible value is 3.14
+  double max_vel = 3.14; // max possible value is 3.14
   double acceleration = 10.0;
   double dt = 0.02;
   actual_q = rtde_receive.getActualQ();
