@@ -373,7 +373,7 @@
       </collision>
     </link>
     <joint name="${prefix}wrist_3_link-tool0_fixed_joint" type="fixed">
-      <origin xyz="0.00973 0.03636 0.12945" rpy="0 0 0" />
+      <origin xyz="0.01138 0.1141 0.14719" rpy="0 0 0" />
       <parent link="${prefix}wrist_3_link" />
       <child link="${prefix}tool0" />
     </joint>
