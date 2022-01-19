@@ -197,15 +197,15 @@ void writeToCsv(std::vector<double> vec, std::string filename)
 {
   std::ofstream file;
   file.open("/home/cpn/catkin_ws/src/trac_ik_examples/trac_ik_examples/" + filename, std::ios_base::app);
-
-  for (int j = 0; j < 6; j++)
+  file << vec.at(2);
+  /*for (int j = 0; j < 6; j++)
   {
     file << vec.at(j);
     if (j < 5)
     {
       file << ",";
     }
-  }
+  }*/
   file << "\n";
 
   file.close();
@@ -281,9 +281,9 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
       else
         joint_speed[i] = -max_vel;*/
       if (tmp_speed[i] > 0)
-        joint_speed[i] = std::min(tmp_speed[i] * 6, max_vel);
+        joint_speed[i] = std::min(tmp_speed[i] * 5, max_vel);
       else
-        joint_speed[i] = std::max(tmp_speed[i] * 6, -max_vel);
+        joint_speed[i] = std::max(tmp_speed[i] * 5, -max_vel);
       //factor may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
       if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
       {
@@ -293,9 +293,9 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
     else if (std::abs(tmp_speed[i]) > 0.001)
     {
       if (tmp_speed[i] > 0)
-        joint_speed[i] = std::min(tmp_speed[i] * 5, max_vel);
+        joint_speed[i] = std::min(tmp_speed[i] * 4, max_vel);
       else
-        joint_speed[i] = std::max(tmp_speed[i] * 5, -max_vel);
+        joint_speed[i] = std::max(tmp_speed[i] * 4, -max_vel);
       if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
       {
         joint_speed[i] = tmp_speed[i] * (max_vel / *max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()));
@@ -689,8 +689,8 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
     actual_q = rtde_receive.getActualQ();
     joint_speed = newJointSpeed(goal, actual_q, joint_speed, max_vel);
-    writeToCsv(joint_speed, "newjointspeeds");
-    writeToCsv(actual_q, "actual_q");
+    writeToCsv(joint_speed, "newjointspeeds.csv");
+    writeToCsv(actual_q, "actual_q.csv");
     is_all_zero = true;
     for (int i = 0; i < joint_speed.size(); i++)
     {
@@ -755,9 +755,9 @@ void tests()
   std::vector<double> test = {0.130, 2.203, 2.317};
   std::vector<double> rod_test(9);
   rod_test = rodrigues(test);
-  std::vector<double> her_ee_pose = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.136,
-                                     rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.200,
-                                     rod_test.at(2), rod_test.at(5), rod_test.at(8), 1.005};
+  std::vector<double> her_ee_pose = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.127,
+                                     rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.357,
+                                     rod_test.at(2), rod_test.at(5), rod_test.at(8), 0.981};
   setEEPos(her_ee_pose);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   while (true)
@@ -845,7 +845,7 @@ int main(int argc, char **argv)
   // testRandomSamples(num_samples, chain_start, chain_end, timeout, urdf_param);
   // moveArm("172.30.10.1", ee_pose, num_samples, chain_start, chain_end, timeout, urdf_param);
 
-  // std::vector<double> test_start = {1.67858,-1.49047,-1.38178,0.07177,-0.0568994,0.0680332};
+  // std::vector<double> test_start = {-1.586242, -1.637176, 0.424309, 1.163873, 1.574125, 0.098138};
   // rtde_control.moveJ(test_start);
 
   printf("Starting rodrigues test:\n");
