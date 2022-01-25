@@ -197,15 +197,15 @@ void writeToCsv(std::vector<double> vec, std::string filename)
 {
   std::ofstream file;
   file.open("/home/cpn/catkin_ws/src/trac_ik_examples/trac_ik_examples/" + filename, std::ios_base::app);
-  file << vec.at(2);
-  /*for (int j = 0; j < 6; j++)
+  //file << vec.at(2);
+  for (int j = 0; j < 6; j++)
   {
     file << vec.at(j);
     if (j < 5)
     {
       file << ",";
     }
-  }*/
+  }
   file << "\n";
 
   file.close();
@@ -689,8 +689,8 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
     actual_q = rtde_receive.getActualQ();
     joint_speed = newJointSpeed(goal, actual_q, joint_speed, max_vel);
-    writeToCsv(joint_speed, "newjointspeeds.csv");
-    writeToCsv(actual_q, "actual_q.csv");
+    //writeToCsv(joint_speed, "newjointspeeds.csv");
+    //writeToCsv(actual_q, "actual_q.csv");
     is_all_zero = true;
     for (int i = 0; i < joint_speed.size(); i++)
     {
@@ -758,7 +758,7 @@ void tests()
   std::vector<double> her_ee_pose = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.127,
                                      rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.357,
                                      rod_test.at(2), rod_test.at(5), rod_test.at(8), 0.981};
-  setEEPos(her_ee_pose);
+  //setEEPos(her_ee_pose);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   while (true)
   {
@@ -845,11 +845,11 @@ int main(int argc, char **argv)
   // testRandomSamples(num_samples, chain_start, chain_end, timeout, urdf_param);
   // moveArm("172.30.10.1", ee_pose, num_samples, chain_start, chain_end, timeout, urdf_param);
 
-  // std::vector<double> test_start = {-1.586242, -1.637176, 0.424309, 1.163873, 1.574125, 0.098138};
-  // rtde_control.moveJ(test_start);
+  std::vector<double> test_start = {-0.152643, -1.36855, 1.01975, -2.14703, -2.92899, 2.9};
+  rtde_control.moveJ(test_start);
 
   printf("Starting rodrigues test:\n");
-  std::vector<double> test = {0.130, 2.203, 2.317};
+  std::vector<double> test = {0.016, 2.382, 2.102};
   std::vector<double> rod_test(9);
   rod_test = rodrigues(test);
   printf("Test: \n");
@@ -863,9 +863,9 @@ int main(int argc, char **argv)
                                  -0.0157949, 0.1246475, 0.9920754, 0.4,
                                  0.0331173, 0.9917200, -0.1240756, 0.274};
 
-  std::vector<double> ee_pose_with_rodriguez = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.136,
-                                                rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.613,
-                                                rod_test.at(2), rod_test.at(5), rod_test.at(8), 0.644};
+  std::vector<double> ee_pose_with_rodriguez = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.28624045,
+                                                rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.70990472,
+                                                rod_test.at(2), rod_test.at(5), rod_test.at(8), 0.400};
 
   // printf("DEBUG: main() #2\n");
   setEEPos(ee_pose_with_rodriguez);
