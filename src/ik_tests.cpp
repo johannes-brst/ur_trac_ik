@@ -52,8 +52,8 @@ using namespace ur_rtde;
 
 RTDEControlInterface rtde_control("172.30.10.1");
 RTDEReceiveInterface rtde_receive("172.30.10.1");
-//RTDEControlInterface rtde_control("127.0.0.1");
-//RTDEReceiveInterface rtde_receive("127.0.0.1");
+// RTDEControlInterface rtde_control("127.0.0.1");
+// RTDEReceiveInterface rtde_receive("127.0.0.1");
 
 int _num_samples;
 std::string _chain_start, _chain_end, _urdf_param;
@@ -65,6 +65,7 @@ std::vector<double> eePos = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 std::vector<double> start_joint_pos = {0, 0, 0, 0, 0, 0};
 bool modified = false;
 std::thread thr;
+TRAC_IK::TRAC_IK *tracik_solver;
 
 void moveArm(double num_samples, std::string chain_start, std::string chain_end, double timeout, std::string urdf_param);
 
@@ -197,7 +198,7 @@ void writeToCsv(std::vector<double> vec, std::string filename)
 {
   std::ofstream file;
   file.open("/home/cpn/catkin_ws/src/trac_ik_examples/trac_ik_examples/" + filename, std::ios_base::app);
-  //file << vec.at(2);
+  // file << vec.at(2);
   for (int j = 0; j < 6; j++)
   {
     file << vec.at(j);
@@ -252,7 +253,7 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
         joint_speed[i] = std::min(tmp_speed[i] * 10, max_vel);
       else
         joint_speed[i] = std::max(tmp_speed[i] * 10, -max_vel);
-      //factor may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
+      // factor may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
       if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
       {
         joint_speed[i] = tmp_speed[i] * (max_vel / *max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()));
@@ -268,7 +269,7 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
         joint_speed[i] = std::min(tmp_speed[i] * 8, max_vel);
       else
         joint_speed[i] = std::max(tmp_speed[i] * 8, -max_vel);
-      //factor may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
+      // factor may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
       if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
       {
         joint_speed[i] = tmp_speed[i] * (max_vel / *max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()));
@@ -284,7 +285,7 @@ std::vector<double> newJointSpeed(std::vector<double> joint_config, std::vector<
         joint_speed[i] = std::min(tmp_speed[i] * 5, max_vel);
       else
         joint_speed[i] = std::max(tmp_speed[i] * 5, -max_vel);
-      //factor may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
+      // factor may needs to be adjust, because the robot seems to have problems sometimes to reduce the speed in time
       if (*max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()) > 3.14)
       {
         joint_speed[i] = tmp_speed[i] * (max_vel / *max_element(abs_tmp_speed.begin(), abs_tmp_speed.end()));
@@ -440,11 +441,11 @@ void testRandomSamples(double num_samples, std::string chain_start, std::string 
       }
       solutions.push_back(result);
     }
-    //if (int((double)i / num_samples * 100) % 10 == 0)
-    //  ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
+    // if (int((double)i / num_samples * 100) % 10 == 0)
+    //   ROS_INFO_STREAM_THROTTLE(1, int((i) / num_samples * 100) << "\% done");
   }
 
-  //writeToCsv(solutions);
+  // writeToCsv(solutions);
   std::cout << "TRAC-IK found " << success << " solutions (" << 100.0 * success / num_samples << "\%) with an average of " << total_time / num_samples << " secs per sample" << std::endl;
 }
 
@@ -457,13 +458,13 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   // This constructor parses the URDF loaded in rosparm urdf_param into the
   // needed KDL structures.  We then pull these out to compare against the KDL
   // IK solver.
-  TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps, TRAC_IK::Distance);
+  //TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps, TRAC_IK::Distance);
   // printf("DEBUG: tracik_solver init done\n");
 
   KDL::Chain chain;
   KDL::JntArray ll, ul; // lower joint limits, upper joint limits
 
-  bool valid = tracik_solver.getKDLChain(chain);
+  bool valid = tracik_solver->getKDLChain(chain);
 
   if (!valid)
   {
@@ -471,7 +472,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
     return result;
   }
 
-  valid = tracik_solver.getKDLLimits(ll, ul);
+  valid = tracik_solver->getKDLLimits(ll, ul);
 
   if (!valid)
   {
@@ -486,7 +487,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
 
   // Set up KDL IK
 
-  KDL::ChainFkSolverPos_recursive fk_solver(chain); // Forward kin. solver
+  //KDL::ChainFkSolverPos_recursive fk_solver(chain); // Forward kin. solver
 
   // KDL::ChainIkSolverVel_pinv vik_solver(chain);                                         // PseudoInverse vel solver
   // KDL::ChainIkSolverPos_NR_JL kdl_solver(chain, ll, ul, fk_solver, vik_solver, 1, eps); // Joint Limit Solver
@@ -561,7 +562,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
   double elapsed = 0;
   start_time = boost::posix_time::microsec_clock::local_time();
   // printf("DEBUG: chain number of segments: %u\n", chain.getNrOfSegments());
-  rc = tracik_solver.CartToJnt(jnt, end_effector_pose, result);
+  rc = tracik_solver->CartToJnt(jnt, end_effector_pose, result);
   diff = boost::posix_time::microsec_clock::local_time() - start_time;
   elapsed = diff.total_nanoseconds() / 1e9;
   std::cout << "Time needed for calculation:" << elapsed << "seconds" << std::endl;
@@ -587,7 +588,7 @@ KDL::JntArray calculateSolution(double num_samples, std::vector<double> startpos
       std::cout << result(i) << std::endl;
     }
     std::vector<KDL::JntArray> solutions;
-    tracik_solver.getSolutions(solutions);
+    tracik_solver->getSolutions(solutions);
     std::cout << "Number of found solutions: " << solutions.size() << std::endl;
     // std::vector<double> goal = {result(0), result(1), result(2), result(3), result(4), result(5)};
     // rtde_control.moveJ(goal);
@@ -635,7 +636,7 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 {
   // printf("DEBUG: moveArm\n");
   std::vector<double> actual_q = rtde_receive.getActualQ();
-  //start_joint_pos = actual_q;
+  // start_joint_pos = actual_q;
   KDL::JntArray result = calculateSolution(num_samples, actual_q, eePos, chain_start, chain_end, timeout, urdf_param);
 
   printf("\n");
@@ -689,8 +690,8 @@ void moveArm(double num_samples, std::string chain_start, std::string chain_end,
 
     actual_q = rtde_receive.getActualQ();
     joint_speed = newJointSpeed(goal, actual_q, joint_speed, max_vel);
-    //writeToCsv(joint_speed, "newjointspeeds.csv");
-    //writeToCsv(actual_q, "actual_q.csv");
+    // writeToCsv(joint_speed, "newjointspeeds.csv");
+    // writeToCsv(actual_q, "actual_q.csv");
     is_all_zero = true;
     for (int i = 0; i < joint_speed.size(); i++)
     {
@@ -758,7 +759,7 @@ void tests()
   std::vector<double> her_ee_pose = {rod_test.at(0), rod_test.at(3), rod_test.at(6), -0.127,
                                      rod_test.at(1), rod_test.at(4), rod_test.at(7), 0.357,
                                      rod_test.at(2), rod_test.at(5), rod_test.at(8), 0.981};
-  //setEEPos(her_ee_pose);
+  // setEEPos(her_ee_pose);
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   while (true)
   {
@@ -773,7 +774,7 @@ void tests()
     std::vector<double> new_ee_pose = {-0.9993266, 0.0308951, -0.0197921, -0.114,
                                        -0.0157949, 0.1246475, 0.9920754, 0.502,
                                        0.0331173, 0.9917200, -0.1240756, temp_z};
-    //setEEPos(new_ee_pose);
+    // setEEPos(new_ee_pose);
     std::this_thread::sleep_for(std::chrono::milliseconds(200));
     /*setEEPos(hin_ee_pose);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
@@ -815,8 +816,6 @@ void tests()
   return;
 }
 
-
-
 int main(int argc, char **argv)
 {
   ROS_INFO("ROS_INFO"); // need to call ROS_INFO one time, so std::cout prints work
@@ -841,6 +840,8 @@ int main(int argc, char **argv)
 
   if (_num_samples < 1)
     _num_samples = 1;
+
+  tracik_solver = new TRAC_IK::TRAC_IK(_chain_start, _chain_end, _urdf_param, _timeout, 1e-5, TRAC_IK::SolveType::Distance);
 
   // testRandomSamples(num_samples, chain_start, chain_end, timeout, urdf_param);
   // moveArm("172.30.10.1", ee_pose, num_samples, chain_start, chain_end, timeout, urdf_param);
